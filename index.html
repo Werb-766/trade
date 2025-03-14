@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valyuta Konverter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #1e1e1e;
+            color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #2e2e2e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.1);
+            width: 350px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        .input-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100px;
+            padding: 5px;
+            font-size: 16px;
+            text-align: center;
+            border: 1px solid #777;
+            border-radius: 5px;
+            background: #333;
+            color: #f4f4f4;
+        }
+
+        .dropdown {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dropdown select {
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #777;
+            background: #333;
+            color: #f4f4f4;
+        }
+
+        .dropdown img {
+            width: 30px;
+            height: 20px;
+            border-radius: 3px;
+            filter: grayscale(100%);
+        }
+
+        .msg {
+            margin: 15px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Valyuta Konverter</h2>
+        <div class="input-box">
+            <input type="number" value="1" class="amount">
+            <div class="dropdown from">
+                <img src="" alt="Flag">
+                <select></select>
+            </div>
+        </div>
+
+        <div class="input-box">
+            <div class="dropdown to">
+                <img src="" alt="Flag">
+                <select></select>
+            </div>
+        </div>
+
+        <div class="msg">1 USD = 12000 UZS</div>
+        <button>Konvertatsiya</button>
+    </div>
+
+    <script>
+        const BASE_URL = "https://2024-03-06.currency-api.pages.dev/v1/currencies";
+        const countryList = {
+            USD: "US", EUR: "FR", GBP: "GB", RUB: "RU", UZS: "UZ", KZT: "KZ", CNY: "CN",
+            JPY: "JP", INR: "IN", CAD: "CA", AUD: "AU", CHF: "CH", TRY: "TR", AED: "AE"
+        };
+
+        const dropdowns = document.querySelectorAll(".dropdown select");
+        const fromCurrency = document.querySelector(".from select");
+        const toCurrency = document.querySelector(".to select");
+        const amountInput = document.querySelector(".amount");
+        const exchangeMsg = document.querySelector(".msg");
+        const convertBtn = document.querySelector("button");
+
+        // Valyutalar ro'yxatini yaratish
+        dropdowns.forEach(select => {
+            Object.keys(countryList).forEach(currencyCode => {
+                let option = document.createElement("option");
+                option.value = currencyCode;
+                option.textContent = currencyCode;
+                select.appendChild(option);
+            });
+
+            select.addEventListener("change", (event) => {
+                updateFlag(event.target);
+            });
+        });
+
+        // Standart valyutalarni o'rnatish
+        fromCurrency.value = "USD";
+        toCurrency.value = "UZS";
+        updateFlag(fromCurrency);
+        updateFlag(toCurrency);
+
+        // Bayroqni yuklash
+        async function updateFlag(selectElement) {
+            let currencyCode = selectElement.value;
+            let countryCode = countryList[currencyCode];
+            let imgElement = selectElement.parentElement.querySelector("img");
+            imgElement.src = `https://flagsapi.com/${countryCode}/flat/64.png`;
+        }
+
+        // Valyuta kursini olish va hisoblash
+        async function updateExchangeRate() {
+            let from = fromCurrency.value.toLowerCase();
+            let to = toCurrency.value.toLowerCase();
+            let amount = parseFloat(amountInput.value) || 1;
+
+            try {
+                let response = await fetch(`${BASE_URL}/${from}.json`);
+                let data = await response.json();
+                
+                if (data[from] && data[from][to]) {
+                    let rate = data[from][to];
+                    let convertedAmount = (amount * rate).toFixed(2);
+                    exchangeMsg.textContent = `${amount} ${fromCurrency.value} = ${convertedAmount} ${toCurrency.value}`;
+                } else {
+                    exchangeMsg.textContent = "Kurs ma'lumotlari topilmadi.";
+                }
+            } catch (error) {
+                exchangeMsg.textContent = "Xatolik yuz berdi, qayta urinib ko'ring.";
+            }
+        }
+
+        // Konvertatsiya tugmachasini bosganda
+        convertBtn.addEventListener("click", (event) => {
+            event.preventDefault();
+            updateExchangeRate();
+        });
+
+        // Sahifa yuklanganda avtomatik hisoblash
+        window.addEventListener("load", updateExchangeRate);
+    </script>
+
+</body>
+</html>
